@@ -1,43 +1,49 @@
 patch:
   # --- 1. 全局样式设置 ---
-  "style/color_scheme": mint_light_blue
-  "style/color_scheme_dark": mint_dark_blue
+  "style/color_scheme": wechat
+  "style/color_scheme_dark": wechat_dark
   "style/text_orientation": horizontal
   "style/inline_preedit": true
-  "style/corner_radius": 10
-  "style/font_face": "PingFang SC"
-  "style/font_point": 16
-  "style/label_font_face": "Lucida Grande"
-  "style/label_font_point": 16
+  "style/corner_radius": 8
+  "style/font_point": 15
+  "style/label_font_point": 15
   
   # --- 2. 布局微调 ---
-  "style/line_spacing": 5
-  "style/spacing": 10
+  "style/layout/max_width": 1200
+  "style/layout/margin_x": 10
+  "style/layout/margin_y": 8
+  "style/layout/candidate_spacing": 24
+  "style/layout/hilite_spacing": 6
+  "style/layout/hilite_padding": 3
+  "style/layout/hilite_padding_x": 5
 
-  # --- 3. 配色方案定义 (含 macOS 磨砂效果) ---
+  # --- 3. 配色方案定义 ---
   preset_color_schemes:
-    mint_light_blue:
-      name: "蓝水鸭／Mint Light Blue"
-      author: Mintimate
-      translucency: true                     # 开启磨砂
-      alpha: 1                                
-      back_color: 0xefefef                    
-      hilited_candidate_back_color: 0xed9564  
-      label_color: 0xcac9c8                   
-      candidate_text_color: 0x424242          
-      hilited_candidate_text_color: 0xefefef  
-      comment_text_color: 0xcac9c8            
-      text_color: 0x6495ed                    
-    
-    mint_dark_blue:
-      name: "黑水鸭／Mint Dark Blue"
-      author: Mintimate
-      translucency: true                     # 开启磨砂
-      alpha: 1                                
-      back_color: 0x424242                    
-      hilited_candidate_back_color: 0xc6c01a  
-      label_color: 0xefefef                   
-      candidate_text_color: 0xefefef          
-      hilited_candidate_text_color: 0xefefef  
-      comment_text_color: 0xefefef            
-      text_color: 0x6495ed                    
+    wechat:
+      name: "微信／Wechat"
+      text_color: 0x424242
+      label_color: 0x999999
+      back_color: 0xFFFFFF
+      border_color: 0xFFFFFF
+      comment_text_color: 0x999999
+      candidate_text_color: 0x3c3c3c
+      hilited_comment_text_color: 0xFFFFFF
+      hilited_back_color: 0x79af22
+      hilited_text_color: 0xFFFFFF
+      hilited_label_color: 0xFFFFFF
+      hilited_candidate_back_color: 0x79af22
+      shadow_color: 0x20000000
+    wechat_dark:
+      name: "微信・暗色／Wechat Dark"
+      text_color: 0xdfdfdf
+      label_color: 0x666666
+      back_color: 0x2c2c2c
+      border_color: 0x2c2c2c
+      comment_text_color: 0x666666
+      candidate_text_color: 0xdfdfdf
+      hilited_comment_text_color: 0xFFFFFF
+      hilited_back_color: 0x79af22
+      hilited_text_color: 0xFFFFFF
+      hilited_label_color: 0xFFFFFF
+      hilited_candidate_back_color: 0x79af22
+      shadow_color: 0x80000000

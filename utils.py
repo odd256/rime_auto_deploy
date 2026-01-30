@@ -1,35 +1,71 @@
 import shutil
 import zipfile
 import httpx
+import datetime
+import time
 from pathlib import Path
 from rich.progress import Progress
 from rich.console import Console
-import datetime
 
 console = Console()
 
 
-def download_file(url: str, dest_path: Path):
-    """
-    使用进度条将文件从 URL 下载到目标路径。
-    """
-    try:
-        with httpx.stream("GET", url, follow_redirects=True) as response:
-            response.raise_for_status()
-            total = int(response.headers.get("Content-Length", 0))
+GH_MIRRORS = [
+    "https://ghproxy.net/",
+    "https://mirror.ghproxy.com/",
+]
 
-            with open(dest_path, "wb") as f:
-                with Progress() as progress:
-                    task = progress.add_task(
-                        f"[cyan]正在下载 {dest_path.name}...", total=total
-                    )
-                    for chunk in response.iter_bytes():
-                        f.write(chunk)
-                        progress.update(task, advance=len(chunk))
-        console.print(f"[green]成功下载: {dest_path}[/green]")
-    except Exception as e:
-        console.print(f"[red]下载失败 {url}: {e}[/red]")
-        raise
+
+def download_file(url: str, dest_path: Path, max_retries: int = 3):
+    """
+    使用进度条将文件从 URL 下载到目标路径，支持自动重试和 GitHub 镜像。
+    """
+    urls_to_try = [url]
+
+    # 如果是 GitHub 地址，添加一些镜像
+    if "github.com" in url:
+        for mirror in GH_MIRRORS:
+            urls_to_try.append(f"{mirror}{url}")
+
+    last_error = None
+
+    for attempt, current_url in enumerate(urls_to_try * max_retries):
+        try:
+            if attempt > 0:
+                console.print(
+                    f"[yellow]重试下载 ({attempt + 1}): {current_url}[/yellow]"
+                )
+
+            # 设置较长的超时时间
+            timeout = httpx.Timeout(30.0, connect=10.0)
+
+            with httpx.stream(
+                "GET", current_url, follow_redirects=True, timeout=timeout
+            ) as response:
+                response.raise_for_status()
+                total = int(response.headers.get("Content-Length", 0))
+
+                with open(dest_path, "wb") as f:
+                    with Progress() as progress:
+                        task = progress.add_task(
+                            f"[cyan]正在下载 {dest_path.name}...", total=total
+                        )
+                        for chunk in response.iter_bytes():
+                            f.write(chunk)
+                            progress.update(task, advance=len(chunk))
+
+            console.print(f"[green]成功下载: {dest_path}[/green]")
+            return  # 下载成功，退出函数
+
+        except Exception as e:
+            last_error = e
+            console.print(f"[dim]尝试下载失败 ({current_url}): {e}[/dim]")
+            if attempt < (len(urls_to_try) * max_retries) - 1:
+                time.sleep(2)  # 等待一会儿再重试
+            continue
+
+    console.print(f"[red]所有下载尝试均失败: {url}[/red]")
+    raise last_error
 
 
 def extract_zip(zip_path: Path, extract_to: Path):
