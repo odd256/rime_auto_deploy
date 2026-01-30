@@ -32,31 +32,71 @@ def save_settings(settings):
         console.print(f"[red]保存设置失败: {e}[/red]")
 
 
+def select_config_source(force_ask=False):
+    """选择基础配置源"""
+    settings = load_settings()
+    if not force_ask and "config_source" in settings:
+        return settings["config_source"]
+
+    console.print("\n[bold cyan]请选择基础配置源:[/bold cyan]")
+    console.print("[1] 雾凇拼音 (Rime-Ice) - 默认")
+    console.print("[2] 白霜拼音 (Rime-Frost) - 词库更全")
+
+    mapping = {
+        "1": "rime-ice",
+        "2": "rime-frost",
+    }
+
+    choice = Prompt.ask("输入序号", choices=["1", "2"], default="1")
+    source = mapping.get(choice, "rime-ice")
+
+    settings["config_source"] = source
+    save_settings(settings)
+    console.print(f"[green]配置源已设置为: {source}[/green]")
+    return source
+
+
 def select_schemas(force_ask=False):
     """
     选择输入方案逻辑。
     如果已经保存过方案且非强制询问，则直接返回保存的方案。
     """
     settings = load_settings()
+    source = settings.get("config_source", "rime-ice")
+
     if not force_ask and "selected_schemas" in settings:
         return settings["selected_schemas"]
 
     console.print(
         "\n[bold cyan]请配置要启用的输入方案 (多选请用逗号分隔，直接回车默认为全拼):[/bold cyan]"
     )
-    console.print("[1] 雾凇拼音 (全拼)")
-    console.print("[2] 小鹤双拼")
-    console.print("[3] 微软双拼")
-    console.print("[4] 自然码双拼")
-    console.print("[5] 智能ABC双拼")
 
-    mapping = {
-        "1": "rime_ice",
-        "2": "double_pinyin_flypy",
-        "3": "double_pinyin_mspro",
-        "4": "double_pinyin",
-        "5": "double_pinyin_abc",
-    }
+    # 定义不同源的方案映射
+    if source == "rime-frost":
+        # 白霜拼音方案列表
+        schemas_info = [
+            ("1", "rime_frost", "白霜拼音 (全拼)"),
+            ("2", "rime_frost_double_pinyin_flypy", "小鹤双拼"),
+            ("3", "rime_frost_double_pinyin_mspy", "微软双拼"),
+            ("4", "rime_frost_double_pinyin", "自然码双拼"),
+            ("5", "rime_frost_double_pinyin_sogou", "搜狗双拼"),
+        ]
+        default_id = "rime_frost"
+    else:
+        # 雾凇拼音方案列表 (默认)
+        schemas_info = [
+            ("1", "rime_ice", "雾凇拼音 (全拼)"),
+            ("2", "double_pinyin_flypy", "小鹤双拼"),
+            ("3", "double_pinyin_mspro", "微软双拼"),
+            ("4", "double_pinyin", "自然码双拼"),
+            ("5", "double_pinyin_abc", "智能ABC双拼"),
+        ]
+        default_id = "rime_ice"
+
+    for idx, schema_id, name in schemas_info:
+        console.print(f"[{idx}] {name}")
+
+    mapping = {idx: schema_id for idx, schema_id, name in schemas_info}
 
     input_str = Prompt.ask("输入序号", default="1")
     choices = [c.strip() for c in input_str.split(",")]
@@ -65,9 +105,9 @@ def select_schemas(force_ask=False):
     for c in choices:
         if c in mapping:
             selected.append(mapping[c])
-        else:
-            if not selected:
-                selected.append("rime_ice")
+
+    if not selected:
+        selected.append(default_id)
 
     # 保存到设置
     settings["selected_schemas"] = selected
@@ -103,13 +143,17 @@ def run_step_02(manager):
 
 
 def run_step_03(manager):
-    """Step 03: 自动安装 Rime-ice 配置 (拉取上游仓库)"""
-    console.print("\n[bold]Step 03: 自动安装 Rime-ice 配置 (拉取上游仓库)[/bold]")
+    """Step 03: 自动安装 Rime 配置 (拉取上游仓库)"""
+    settings = load_settings()
+    source_id = settings.get("config_source", "rime-ice")
+
+    console.print(f"\n[bold]Step 03: 自动安装 {source_id} 配置 (拉取上游仓库)[/bold]")
     manager.stop_rime()
     config_dir = manager.get_config_dir()
     integrator = ConfigIntegrator(config_dir)
+    selected = settings.get("selected_schemas")
     try:
-        integrator.install_rime_ice()
+        integrator.install_base_config(source_id=source_id, selected_schemas=selected)
     except Exception as e:
         console.print(f"[red]配置下载失败: {e}[/red]")
         raise
@@ -140,7 +184,8 @@ def auto_mode(manager):
         )
     )
 
-    # 自动引导方案选择
+    # 自动引导源选择和方案选择
+    select_config_source()
     select_schemas()
 
     if Confirm.ask("开始执行 Step 01: 安装 Rime?", default=True):
@@ -153,38 +198,6 @@ def auto_mode(manager):
 
     console.print("\n[bold green]自动模式流程完成！[/bold green]")
     manager.post_install_deploy()
-
-
-def manual_mode(manager):
-    while True:
-        console.print(
-            Panel(
-                "[bold blue]进入手动模式 (Manual Mode)[/bold blue]\n请选择要单独执行的任务"
-            )
-        )
-        console.print("[1] 执行 Step 01: 确认安装 Rime 输入法")
-        console.print("[2] 执行 Step 02: 备份 Rime 默认配置")
-        console.print("[3] 执行 Step 03: 自动安装 Rime-ice 配置 (上游下载)")
-        console.print("[4] 执行 Step 04: 同步自定义配置文件 (本地 custom_config)")
-        console.print("[5] 返回主菜单")
-
-        choice = Prompt.ask(
-            "请选择步骤", choices=["1", "2", "3", "4", "5"], default="5"
-        )
-        if choice == "1":
-            run_step_01(manager)
-        elif choice == "2":
-            run_step_02(manager)
-        elif choice == "3":
-            run_step_03(manager)
-        elif choice == "4":
-            run_step_04(manager)
-        else:
-            break
-
-        console.print("\n[green]任务完成。[/green]")
-        if not Confirm.ask("继续手动执行其他步骤?"):
-            break
 
 
 def upgrade_mode(manager):
@@ -224,12 +237,13 @@ def main():
 
         # 启动时预选检查
         settings = load_settings()
-        if "selected_schemas" not in settings:
+        if "selected_schemas" not in settings or "config_source" not in settings:
             console.print(
                 Panel(
-                    "[yellow]欢迎！检测到您是第一次使用，请先设定您的输入方案。[/yellow]"
+                    "[yellow]欢迎！检测到您是第一次使用，请先设定您的基础配置源和输入方案。[/yellow]"
                 )
             )
+            select_config_source(force_ask=True)
             select_schemas(force_ask=True)
 
         while True:
@@ -238,14 +252,19 @@ def main():
 
             # 显示当前设置
             settings = load_settings()
+            current_source = settings.get("config_source", "rime-ice")
             current_schemas = ", ".join(settings.get("selected_schemas", ["未设定"]))
-            console.print(f"[dim]当前已选方案: {current_schemas}[/dim]\n")
+            console.print(
+                f"[dim]当前配置源: {current_source} | 已选方案: {current_schemas}[/dim]\n"
+            )
 
             console.print("请选择工作模式:")
             console.print("[1] 自动模式 (Auto Mode): 适合第一次安装。")
-            console.print("[2] 手动模式 (Manual Mode): 自行决定执行步骤。")
-            console.print("[3] 升级模式 (Upgrade Mode): 更新已有 Rime 配置。")
-            console.print("[4] 方案设置 (Schema Setting): 修改已选方案。")
+            console.print("[2] 升级模式 (Upgrade Mode): 更新已有的 Rime 配置。")
+            console.print(
+                "[3] 同步配置 (Sync Config): 同步本地 custom_config 到 Rime。"
+            )
+            console.print("[4] 环境配置 (Environment Config): 修改配置源和输入方案。")
             console.print("[5] 退出")
             console.print("Tips: 输入索引编号(1/2/3/4/5)，Ctrl-C 退出。")
 
@@ -254,15 +273,21 @@ def main():
             if choice == "1":
                 auto_mode(manager)
             elif choice == "2":
-                manual_mode(manager)
-            elif choice == "3":
                 upgrade_mode(manager)
+            elif choice == "3":
+                run_step_04(manager)
+                manager.post_install_deploy()
+                Prompt.ask("\n[bold cyan]同步完成，按回车键返回主菜单[/bold cyan]")
             elif choice == "4":
+                select_config_source(force_ask=True)
                 select_schemas(force_ask=True)
                 # 修改完后询问是否立即部署
                 if Confirm.ask("方案已修改，是否立即同步到 Rime?", default=True):
                     run_step_04(manager)
                     manager.post_install_deploy()
+                    Prompt.ask(
+                        "\n[bold cyan]配置并同步完成，按回车键返回主菜单[/bold cyan]"
+                    )
             elif choice == "5":
                 console.print("感谢使用，再见！")
                 sys.exit(0)

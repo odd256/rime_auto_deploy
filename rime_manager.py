@@ -59,9 +59,7 @@ class WindowsRimeManager(RimeManager):
         return Path(os.environ["APPDATA"]) / "Rime"
 
     def post_install_deploy(self):
-        console.print(
-            "[yellow]配置完成后，请从开始菜单手动运行 'Weasel Deploy' (小狼毫算法服务) 。[/yellow]"
-        )
+        console.print("[yellow]配置完成后，重新部署生效。[/yellow]")
 
 
 class MacRimeManager(RimeManager):

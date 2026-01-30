@@ -6,16 +6,26 @@ from utils import download_file, extract_zip, backup_dir
 
 console = Console()
 
-RIME_ICE_URL = "https://github.com/iDvel/rime-ice/archive/refs/heads/main.zip"
+CONFIG_SOURCES = {
+    "rime-ice": {
+        "name": "雾凇拼音 (Rime-Ice)",
+        "url": "https://github.com/iDvel/rime-ice/archive/refs/heads/main.zip",
+    },
+    "rime-frost": {
+        "name": "白霜拼音 (Rime-Frost)",
+        "url": "https://github.com/gaboolic/rime-frost/archive/refs/heads/master.zip",
+    },
+}
 
 
 class ConfigIntegrator:
     def __init__(self, rime_config_dir: Path):
         self.rime_config_dir = rime_config_dir
 
-    def install_rime_ice(self, selected_schemas=None):
+    def install_base_config(self, source_id="rime-ice", selected_schemas=None):
+        source = CONFIG_SOURCES.get(source_id, CONFIG_SOURCES["rime-ice"])
         console.print(
-            f"[cyan]开始安装/更新雾凇拼音 (Rime-Ice) 基础文件到 {self.rime_config_dir}...[/cyan]"
+            f"[cyan]开始安装/更新 {source['name']} 基础文件到 {self.rime_config_dir}...[/cyan]"
         )
 
         # 1. 备份现有配置
@@ -27,10 +37,10 @@ class ConfigIntegrator:
         # 2. 下载并解压
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            zip_path = temp_path / "rime-ice.zip"
+            zip_path = temp_path / f"{source_id}.zip"
 
-            console.print("[dim]正在通过 GitHub 下载雾凇拼音配置...[/dim]")
-            download_file(RIME_ICE_URL, zip_path)
+            console.print(f"[dim]正在通过 GitHub 下载 {source['name']} 配置...[/dim]")
+            download_file(source["url"], zip_path)
 
             extract_path = temp_path / "extracted"
             extract_zip(zip_path, extract_path)
@@ -43,7 +53,9 @@ class ConfigIntegrator:
 
             try:
                 shutil.copytree(source_dir, self.rime_config_dir, dirs_exist_ok=True)
-                console.print("[green]雾凇拼音基础文件安装/更新完成。[/green]")
+                console.print(
+                    f"[green]{source['name']} 基础文件安装/更新完成。[/green]"
+                )
             except Exception as e:
                 console.print(f"[red]复制文件失败: {e}[/red]")
                 raise
@@ -76,6 +88,8 @@ class ConfigIntegrator:
         将项目根目录下 custom_config 文件夹内的所有配置文件同步到 Rime 目录。
         如果包含 default.custom.yaml，则自动注入 schema_list。
         """
+        import sys
+
         project_root = Path(__file__).parent
         local_custom_dir = project_root / "custom_config"
 
@@ -85,7 +99,7 @@ class ConfigIntegrator:
             return
 
         console.print(
-            f"[cyan]正在同步本地 {local_custom_dir.name} 执行配置部署...[/cyan]"
+            f"\n[cyan]正在同步本地 {local_custom_dir.name} 执行配置部署...[/cyan]"
         )
 
         # 构建要注入的 YAML 字符串
@@ -96,9 +110,18 @@ class ConfigIntegrator:
             )
 
         try:
+            count = 0
             for item in local_custom_dir.iterdir():
                 if item.is_file() and item.suffix in [".yaml", ".yml"]:
-                    # 统一目标扩展名为 .yaml
+                    # 1. 平台过滤
+                    if sys.platform == "win32" and "squirrel.custom" in item.name:
+                        console.print(f"[dim]跳过 macOS 专用配置: {item.name}[/dim]")
+                        continue
+                    if sys.platform == "darwin" and "weasel.custom" in item.name:
+                        console.print(f"[dim]跳过 Windows 专用配置: {item.name}[/dim]")
+                        continue
+
+                    # 2. 统一目标扩展名为 .yaml
                     dest_name = (
                         "default.custom.yaml"
                         if item.stem == "default.custom"
@@ -113,7 +136,7 @@ class ConfigIntegrator:
                     with open(item, "r", encoding="utf-8") as f:
                         content = f.read()
 
-                    # 如果是 default.custom 且用户选了方案，尝试注入
+                    # 3. 如果是 default.custom 且用户选了方案，尝试注入
                     if "default.custom" in item.name and selected_schemas:
                         if "schema_list:" not in content:
                             # 在 patch: 后面注入
@@ -122,7 +145,7 @@ class ConfigIntegrator:
                                     "patch:", f"patch:\n{schemas_yaml}"
                                 )
                                 console.print(
-                                    f"[dim]已在 {item.name} 中注入方案选择[/dim]"
+                                    f"[dim]已在 {item.name} 中自动注入当前勾选的方案[/dim]"
                                 )
                             else:
                                 content = f"patch:\n{schemas_yaml}\n" + content
@@ -130,9 +153,49 @@ class ConfigIntegrator:
                     with open(dest_path, "w", encoding="utf-8") as f:
                         f.write(content)
 
-                    console.print(f"[dim]已部署: {dest_name}[/dim]")
+                    console.print(
+                        f" [green]√[/green] 已同步到 Rime: [bold]{dest_name}[/bold]"
+                    )
+                    count += 1
 
-            console.print("[bold green]自定义配置文件已成功部署到 Rime。[/bold green]")
+            # 4. 确保每个选中的方案都有默认英文 patch
+            if selected_schemas:
+                for schema_id in selected_schemas:
+                    self._ensure_default_english(schema_id)
+
+            console.print(
+                f"\n[bold green]自定义配置同步完成！共处理 {count} 个文件。[/bold green]"
+            )
+            console.print(
+                "[dim]提示: 请稍后在任务栏 Rime 图标上选择“部署/重新部署”以使配置生效。[/dim]\n"
+            )
         except Exception as e:
             console.print(f"[red]同步自定义配置失败: {e}[/red]")
             raise
+
+    def _ensure_default_english(self, schema_id):
+        """
+        为指定方案注入默认英文配置。
+        """
+        dest_path = self.rime_config_dir / f"{schema_id}.custom.yaml"
+        patch_content = '  # 找到 switches 列表中的第一个元素（通常是 ascii_mode），将其重置状态设为 1\n  "switches/@0/reset": 1'
+
+        content = ""
+        if dest_path.exists():
+            with open(dest_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+        if '"switches/@0/reset": 1' in content:
+            return
+
+        if not content.strip():
+            content = f"patch:\n{patch_content}\n"
+        elif "patch:" in content:
+            # 在 patch: 后面注入，保持 yaml 层级
+            content = content.replace("patch:", f"patch:\n{patch_content}")
+        else:
+            content = f"patch:\n{patch_content}\n" + content
+
+        with open(dest_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        console.print(f"[dim]已在 {schema_id}.custom.yaml 中注入默认英文配置[/dim]")

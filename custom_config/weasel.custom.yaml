@@ -1,57 +1,61 @@
 patch:
+  # --- 0. 基础设置 ---
+  show_notifications: false # 是否开启 中/En 切换通知
+
   # --- 1. 全局样式设置 ---
-  "style/color_scheme": mint_light_blue      # 默认亮色方案
-  "style/color_scheme_dark": mint_dark_blue  # 默认暗色方案
+  "style/color_scheme": wechat                # 默认亮色方案
+  "style/color_scheme_dark": wechat_dark     # 默认暗色方案
   "style/horizontal": true                   # 横排显示
   "style/inline_preedit": true               # 行内显示
+  "style/label_format": "%s"                 # 标签格式
   "style/font_face": "Segoe UI Emoji:30:39, Segoe UI Emoji:23:23, Segoe UI Emoji:2a:2a, Segoe UI Emoji:fe0f:fe0f, Segoe UI Emoji:20e3:20e3, Microsoft YaHei, SF Pro, Segoe UI Emoji, Noto Color Emoji"
   "style/label_font_face": "Microsoft YaHei" # 标签字体
-  "style/font_point": 12                    # 字号
+  "style/font_point": 15                    # 字号
+  "style/label_font_point": 15              # 标签字号
+  "style/comment_font_point": 13            # 注释字号
   "style/corner_radius": 8                  # 窗口圆角
   "style/round_corner": 8                   # 高亮色块圆角
   
-  # --- 2. 详细布局设置 (参考 Mint 风格) ---
-  "style/layout/min_width": 145
-  "style/layout/border_width": 0
-  "style/layout/margin_x": 8
+  # --- 2. 详细布局设置 ---
+  "style/layout/max_height": 0
+  "style/layout/max_width": 1200
+  "style/layout/min_width": 10
+  "style/layout/margin_x": 10
   "style/layout/margin_y": 8
-  "style/layout/spacing": 10
-  "style/layout/candidate_spacing": 22
+  "style/layout/candidate_spacing": 24
   "style/layout/hilite_spacing": 6
-  "style/layout/hilite_padding": 8
+  "style/layout/hilite_padding": 3
+  "style/layout/hilite_padding_x": 5
+  "style/layout/shadow_radius": 4
 
   # --- 3. 配色方案定义 ---
   preset_color_schemes:
-    mint_light_blue:
-      name: "蓝水鸭／Mint Light Blue"
-      author: Mintimate
-      text_color: 0x6495ed 
-      back_color: 0xefefef 
-      label_color: 0xcac9c8 
-      border_color: 0xefefef 
-      shadow_color: 0xb4000000
-      candidate_text_color: 0x424242 
-      hilited_text_color: 0xed9564 
-      hilited_back_color: 0xefefef 
-      hilited_candidate_back_color: 0xed9564 
-      hilited_candidate_text_color: 0xefefef
-      hilited_candidate_label_color: 0xcac9c8
-      comment_text_color: 0xcac9c8 
-      hilited_comment_text_color: 0xefefef 
+    wechat:
+      name: "微信／Wechat"
+      text_color: 0x424242
+      label_color: 0x999999
+      back_color: 0xFFFFFF
+      border_color: 0xFFFFFF
+      comment_text_color: 0x999999
+      candidate_text_color: 0x3c3c3c
+      hilited_comment_text_color: 0xFFFFFF
+      hilited_back_color: 0x79af22
+      hilited_text_color: 0xFFFFFF
+      hilited_label_color: 0xFFFFFF
+      hilited_candidate_back_color: 0x79af22
+      shadow_color: 0x20000000
 
-    mint_dark_blue:
-      name: "黑水鸭／Mint Dark Blue"
-      author: Mintimate
-      text_color: 0x6495ed 
-      back_color: 0x424242 
-      label_color: 0xefefef 
-      border_color: 0x424242 
-      shadow_color: 0xb4000000
-      candidate_text_color: 0xefefef
-      hilited_text_color: 0xc6c01a 
-      hilited_back_color: 0x424242
-      hilited_candidate_back_color: 0xc6c01a 
-      hilited_candidate_text_color: 0xefefef
-      hilited_candidate_label_color: 0xffffff
-      comment_text_color: 0xefefef 
-      hilited_comment_text_color: 0xffffff
+    wechat_dark:
+      name: "微信・暗／Wechat Dark"
+      text_color: 0xdfdfdf
+      label_color: 0x707070
+      back_color: 0x191919
+      border_color: 0x191919
+      comment_text_color: 0x707070
+      candidate_text_color: 0xdfdfdf
+      hilited_comment_text_color: 0xFFFFFF
+      hilited_back_color: 0x79af22
+      hilited_text_color: 0xFFFFFF
+      hilited_label_color: 0xFFFFFF
+      hilited_candidate_back_color: 0x79af22
+      shadow_color: 0x00000000
