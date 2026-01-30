@@ -1,0 +1,43 @@
+patch:
+  # --- 1. 全局样式设置 ---
+  "style/color_scheme": mint_light_blue
+  "style/color_scheme_dark": mint_dark_blue
+  "style/text_orientation": horizontal
+  "style/inline_preedit": true
+  "style/corner_radius": 10
+  "style/font_face": "PingFang SC"
+  "style/font_point": 16
+  "style/label_font_face": "Lucida Grande"
+  "style/label_font_point": 16
+  
+  # --- 2. 布局微调 ---
+  "style/line_spacing": 5
+  "style/spacing": 10
+
+  # --- 3. 配色方案定义 (含 macOS 磨砂效果) ---
+  preset_color_schemes:
+    mint_light_blue:
+      name: "蓝水鸭／Mint Light Blue"
+      author: Mintimate
+      translucency: true                     # 开启磨砂
+      alpha: 1                                
+      back_color: 0xefefef                    
+      hilited_candidate_back_color: 0xed9564  
+      label_color: 0xcac9c8                   
+      candidate_text_color: 0x424242          
+      hilited_candidate_text_color: 0xefefef  
+      comment_text_color: 0xcac9c8            
+      text_color: 0x6495ed                    
+    
+    mint_dark_blue:
+      name: "黑水鸭／Mint Dark Blue"
+      author: Mintimate
+      translucency: true                     # 开启磨砂
+      alpha: 1                                
+      back_color: 0x424242                    
+      hilited_candidate_back_color: 0xc6c01a  
+      label_color: 0xefefef                   
+      candidate_text_color: 0xefefef          
+      hilited_candidate_text_color: 0xefefef  
+      comment_text_color: 0xefefef            
+      text_color: 0x6495ed                    
