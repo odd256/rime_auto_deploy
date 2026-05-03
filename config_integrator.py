@@ -2,7 +2,7 @@ import shutil
 import tempfile
 from pathlib import Path
 from rich.console import Console
-from utils import download_file, extract_zip, backup_dir
+from utils import download_file, extract_zip, backup_dir, backup_dir_copy
 
 console = Console()
 
@@ -28,8 +28,8 @@ class ConfigIntegrator:
             f"[cyan]开始安装/更新 {source['name']} 基础文件到 {self.rime_config_dir}...[/cyan]"
         )
 
-        # 1. 备份现有配置
-        backup_dir(self.rime_config_dir)
+        # 1. 备份现有配置（复制而非移动，保留原始目录以便叠加更新）
+        backup_dir_copy(self.rime_config_dir)
 
         # 确保目录存在
         self.rime_config_dir.mkdir(parents=True, exist_ok=True)
@@ -62,10 +62,16 @@ class ConfigIntegrator:
 
         # 3. 如果用户在 Step 03 选择了模式，生成一个基础配置
         if selected_schemas:
-            console.print(
-                f"[cyan]正在根据选择初始化方案: {', '.join(selected_schemas)}[/cyan]"
-            )
-            self.write_base_config(selected_schemas)
+            default_custom = self.rime_config_dir / "default.custom.yaml"
+            if default_custom.exists():
+                console.print(
+                    "[dim]已存在 default.custom.yaml，跳过生成以保留用户配置。[/dim]"
+                )
+            else:
+                console.print(
+                    f"[cyan]正在根据选择初始化方案: {', '.join(selected_schemas)}[/cyan]"
+                )
+                self.write_base_config(selected_schemas)
 
     def write_base_config(self, selected_schemas):
         """

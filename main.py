@@ -208,7 +208,7 @@ def upgrade_mode(manager):
             )
         )
         console.print("[1] 升级 Rime Auto Deploy (脚本自身 - 仅 git 方式)")
-        console.print("[2] 升级 Rime 配置 (上游雾凇拼音仓库)")
+        console.print("[2] 升级 Rime 配置 (上游仓库，保留用户词典和自定义配置)")
         console.print("[3] 同步最新本地自定义配置 (custom_config)")
         console.print("[4] 返回主菜单")
 
@@ -224,6 +224,7 @@ def upgrade_mode(manager):
         elif choice == "2":
             run_step_03(manager)
             manager.post_install_deploy()
+            console.print("[dim]提示: 用户词典、自定义配置和学习记录已保留。[/dim]")
         elif choice == "3":
             run_step_04(manager)
             manager.post_install_deploy()

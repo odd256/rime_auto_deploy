@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell *)",
+      "Bash(python -c \"import utils; print\\('OK'\\)\")",
+      "Bash(python -c \"import main; print\\('OK'\\)\")",
+      "Bash(uv run *)"
+    ]
+  }
+}

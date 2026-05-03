@@ -102,3 +102,27 @@ def backup_dir(target_dir: Path):
             raise
     else:
         console.print(f"[dim]未在 {target_dir} 发现现有目录，跳过备份。[/dim]")
+
+
+def backup_dir_copy(target_dir: Path):
+    """
+    如果目标目录存在，则通过复制（保留原目录）来备份该目录。
+    用于升级场景：备份的同时保留原始目录以便叠加更新。
+    """
+    if target_dir.exists():
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = target_dir.parent / f"{target_dir.name}_backup_{timestamp}"
+        try:
+            shutil.copytree(str(target_dir), str(backup_path))
+            console.print(f"[yellow]已将现有配置备份至: {backup_path}[/yellow]")
+        except PermissionError:
+            console.print("[bold red]备份失败: 权限被拒绝。[/bold red]")
+            console.print(
+                '[yellow]请先退出 Rime 输入法程序（右键任务栏图标选择"退出"），然后再试。[/yellow]'
+            )
+            raise
+        except Exception as e:
+            console.print(f"[red]备份失败 {target_dir}: {e}[/red]")
+            raise
+    else:
+        console.print(f"[dim]未在 {target_dir} 发现现有目录，跳过备份。[/dim]")
