@@ -1,6 +1,5 @@
 import sys
 import json
-import subprocess
 from pathlib import Path
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
@@ -200,38 +199,6 @@ def auto_mode(manager):
     manager.post_install_deploy()
 
 
-def upgrade_mode(manager):
-    while True:
-        console.print(
-            Panel(
-                "[bold yellow]进入升级模式 (Upgrade Mode)[/bold yellow]\n用于对脚本或配置进行更新"
-            )
-        )
-        console.print("[1] 升级 Rime Auto Deploy (脚本自身 - 仅 git 方式)")
-        console.print("[2] 升级 Rime 配置 (上游仓库，保留用户词典和自定义配置)")
-        console.print("[3] 同步最新本地自定义配置 (custom_config)")
-        console.print("[4] 返回主菜单")
-
-        choice = Prompt.ask("请选择升级项", choices=["1", "2", "3", "4"], default="4")
-
-        if choice == "1":
-            console.print("[cyan]正在尝试通过 git pull 更新脚本...[/cyan]")
-            try:
-                subprocess.run(["git", "pull"], check=True)
-                console.print("[green]脚本已尝试更新，请重新启动脚本以应用。[/green]")
-            except Exception as e:
-                console.print(f"[red]更新失败: {e}[/red]")
-        elif choice == "2":
-            run_step_03(manager)
-            manager.post_install_deploy()
-            console.print("[dim]提示: 用户词典、自定义配置和学习记录已保留。[/dim]")
-        elif choice == "3":
-            run_step_04(manager)
-            manager.post_install_deploy()
-        else:
-            break
-
-
 def main():
     try:
         manager = get_manager()
@@ -259,36 +226,29 @@ def main():
                 f"[dim]当前配置源: {current_source} | 已选方案: {current_schemas}[/dim]\n"
             )
 
-            console.print("请选择工作模式:")
-            console.print("[1] 自动模式 (Auto Mode): 适合第一次安装。")
-            console.print("[2] 升级模式 (Upgrade Mode): 更新已有的 Rime 配置。")
-            console.print(
-                "[3] 同步配置 (Sync Config): 同步本地 custom_config 到 Rime。"
-            )
-            console.print("[4] 环境配置 (Environment Config): 修改配置源和输入方案。")
+            console.print("[1] 一键安装（首次使用）")
+            console.print("[2] 更新上游配置")
+            console.print("[3] 同步自定义配置")
+            console.print("[4] 修改配置源和方案")
             console.print("[5] 退出")
-            console.print("Tips: 输入索引编号(1/2/3/4/5)，Ctrl-C 退出。")
 
             choice = Prompt.ask("选择", choices=["1", "2", "3", "4", "5"], default="1")
 
             if choice == "1":
                 auto_mode(manager)
             elif choice == "2":
-                upgrade_mode(manager)
+                run_step_03(manager)
+                manager.post_install_deploy()
+                console.print("[dim]用户词典、自定义配置和学习记录已保留。[/dim]")
             elif choice == "3":
                 run_step_04(manager)
                 manager.post_install_deploy()
-                Prompt.ask("\n[bold cyan]同步完成，按回车键返回主菜单[/bold cyan]")
             elif choice == "4":
                 select_config_source(force_ask=True)
                 select_schemas(force_ask=True)
-                # 修改完后询问是否立即部署
                 if Confirm.ask("方案已修改，是否立即同步到 Rime?", default=True):
                     run_step_04(manager)
                     manager.post_install_deploy()
-                    Prompt.ask(
-                        "\n[bold cyan]配置并同步完成，按回车键返回主菜单[/bold cyan]"
-                    )
             elif choice == "5":
                 console.print("感谢使用，再见！")
                 sys.exit(0)
