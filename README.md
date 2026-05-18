@@ -33,8 +33,8 @@
 
 1. **克隆项目**:
    ```bash
-   git clone https://github.com/your-username/rime-auto-deploy.git
-   cd rime-auto-deploy
+   git clone https://github.com/odd256/rime_auto_deplo/rime-auto-deploy.git
+   cd rime_auto_deploy
    ```
 
 2. **安装依赖并运行**:
