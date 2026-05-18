@@ -43,10 +43,6 @@
      uv sync
      uv run main.py
      ```
-   - **使用 pip**:
-     ```bash
-     pip install -r requirements.txt
-     python main.py
      
 
 3. **菜单功能详解**:
