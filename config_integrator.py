@@ -1,3 +1,4 @@
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -164,10 +165,11 @@ class ConfigIntegrator:
                     )
                     count += 1
 
-            # 4. 确保每个选中的方案都有默认英文 patch
+            # 4. 确保每个选中的方案都有默认英文和 Emoji patch
             if selected_schemas:
                 for schema_id in selected_schemas:
                     self._ensure_default_english(schema_id)
+                    self._ensure_default_emoji(schema_id)
 
             console.print(
                 f"\n[bold green]自定义配置同步完成！共处理 {count} 个文件。[/bold green]"
@@ -205,3 +207,47 @@ class ConfigIntegrator:
         with open(dest_path, "w", encoding="utf-8") as f:
             f.write(content)
         console.print(f"[dim]已在 {schema_id}.custom.yaml 中注入默认英文配置[/dim]")
+
+    def _ensure_default_emoji(self, schema_id):
+        """为指定方案注入默认开启 Emoji 的配置。"""
+        schema_path = self.rime_config_dir / f"{schema_id}.schema.yaml"
+        if not schema_path.exists():
+            console.print(f"[yellow]未找到方案 {schema_id}，跳过 Emoji 配置。[/yellow]")
+            return
+
+        # 雾凇、白霜的开关顺序不同，从方案中定位 emoji，而不是固定索引。
+        schema_content = schema_path.read_text(encoding="utf-8-sig")
+        switches = re.search(
+            r"^switches:[ \t]*(?:#.*)?\r?\n(.*?)(?=^\S|\Z)",
+            schema_content,
+            re.MULTILINE | re.DOTALL,
+        )
+        names = (
+            re.findall(
+                r"^\s*-\s+name:\s*[\"']?([\w]+)",
+                switches.group(1),
+                re.MULTILINE,
+            )
+            if switches else []
+        )
+        if "emoji" not in names:
+            console.print(f"[yellow]方案 {schema_id} 没有 Emoji 开关，跳过。[/yellow]")
+            return
+
+        patch_key = f"switches/@{names.index('emoji')}/reset"
+        dest_path = self.rime_config_dir / f"{schema_id}.custom.yaml"
+        content = dest_path.read_text(encoding="utf-8") if dest_path.exists() else ""
+        existing_patch = rf"(?m)^([ \t]*[\"']?{re.escape(patch_key)}[\"']?:[ \t]*)[^\n]*"
+        if re.search(existing_patch, content):
+            content = re.sub(existing_patch, r"\g<1>1", content)
+        else:
+            patch_content = f'  # 默认开启 Emoji 候选\n  "{patch_key}": 1'
+            if not content.strip():
+                content = f"patch:\n{patch_content}\n"
+            elif "patch:" in content:
+                content = content.replace("patch:", f"patch:\n{patch_content}", 1)
+            else:
+                content = f"patch:\n{patch_content}\n" + content
+
+        dest_path.write_text(content, encoding="utf-8")
+        console.print(f"[dim]已在 {schema_id}.custom.yaml 中注入默认 Emoji 配置[/dim]")
